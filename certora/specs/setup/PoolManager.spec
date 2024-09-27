@@ -207,8 +207,14 @@ function modifyLiquidityAmountsConditions(
     int128 x1_f,    /// The currency1 fee amount
     int256 dL       /// liquidity delta
 ) {
-    require dL > 0 => x0_p < 0 && x1_p < 0;
-    require dL < 0 => x0_p >= 0 && x1_p >= 0;
+    // require dL > 0 => x0_p < 0 && x1_p < 0;
+    // require dL < 0 => x0_p >= 0 && x1_p >= 0;
+
+    //@audit-issue : unhandled fees was breaking the invariant and when liquidity delta is less than zero why consider p >= 0 and why not p > 0// that was also causing the problems
+
+    require dL > 0 => (x0_p + x0_f) < 0 && (x1_p + x1_f) < 0;
+    require dL < 0 => (x0_p + x0_f) > 0 && (x1_p + x1_f) > 0;
+    require dL == 0 => (x0_p + x0_f) == 0 && (x1_p + x1_f) == 0;
 }
 
 function settleMock(env e, address PoolManager, address recipient) returns uint256 {
