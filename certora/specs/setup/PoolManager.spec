@@ -126,9 +126,6 @@ function swapAmountsConditions(
     int128 x0_principal, // amount0_principal (unused for now)
     int128 x1_principal // amount1_principal (unused for now)
 ) {
-    // prevent unnecessary voilations by requiring amountSpecified to be either "> 0" || "< 0" but not "== 0"
-    require x0 != 0; 
-
     // -amountSpecified represents fixed input swaps, that is why currencyIn must have fixed delta(negative)
     // +amountSpecified represetns fixed output swaps, that is why currencyOut must have fixed delta (positive)
     if (x0 < 0) { 
@@ -139,7 +136,7 @@ function swapAmountsConditions(
             require x1_swap == x0;
             require x0_swap > 0;
         }
-    } else {
+    } else if (x0 > 0) {
         if(zeroForOne) { 
             require x0_swap < 0; //currencyIn  must have negative delta so that it can be settled
             require x1_swap == x0; //since positive
@@ -147,6 +144,10 @@ function swapAmountsConditions(
             require x1_swap < 0;
             require x0_swap == x0;
         }
+    } else {
+        // swapping zero shouldn't be possible
+        require x0_swap == 0;
+        require x1_swap == 0;
     }
 }
 
