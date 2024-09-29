@@ -84,7 +84,10 @@ function swapMock(
     int128 amount1_principal = require_int128(amount1_swapper + amount1_hook);
 
     /// Restrict the amounts based on provided swap details
-    swapAmountsConditions(poolId, zeroForOne, amountSpecified, amount0_principal, amount1_principal);
+    // swapAmountsConditions(poolId, zeroForOne, amountSpecified, amount0_principal, amount1_principal);
+
+    //modified swapAmountsConditions() call with 2 extra params for relevant condition checking
+    swapAmountsConditions(poolId, zeroForOne, amountSpecified, amount0_swapper, amount1_swapper, amount0_principal, amount1_principal);
 
     /// Update the pool state post-swap
     updatePoolStateOnSwap(poolId, zeroForOne, sqrtPriceLimitX96, amount0_principal, amount1_principal);
@@ -99,18 +102,52 @@ function swapMock(
     return amountsToBalanceDelta(amount0_swapper, amount1_swapper);
 }
 
-/// INSERT HERE A LIST OF REQUIREMENTS THAT CORRELATE THE TOKEN AMOUNTS FOR SWAPPING.
+// /// INSERT HERE A LIST OF REQUIREMENTS THAT CORRELATE THE TOKEN AMOUNTS FOR SWAPPING.
+// function swapAmountsConditions(
+//     bytes32 poolId, /// The poolId
+//     bool zeroForOne, /// swap to the left (true) or to the right (false)
+//     int256 x0,  /// amount specified (signed)
+//     int128 x0_swap, /// The currency0 swapped amount
+//     int128 x1_swap /// The currency1 swapped amount
+// ) {
+//     // potential assumptions:
+//     /// direction of swapping: shouldn’t be getting both tokens and shouldn’t be giving both tokens
+
+//     require true;
+// }
+
+// modified implementation of swapAmountsConditions
 function swapAmountsConditions(
     bytes32 poolId, /// The poolId
     bool zeroForOne, /// swap to the left (true) or to the right (false)
     int256 x0,  /// amount specified (signed)
-    int128 x0_swap, /// The currency0 swapped amount
-    int128 x1_swap /// The currency1 swapped amount
+    int128 x0_swap, /// (amount0_swapper) The currency0 swapped amount
+    int128 x1_swap, /// (amount1_swapper) The currency1 swapped amount
+    int128 x0_principal, // amount0_principal (unused for now)
+    int128 x1_principal // amount1_principal (unused for now)
 ) {
-    // potential assumptions:
-    /// direction of swapping: shouldn’t be getting both tokens and shouldn’t be giving both tokens
+    // prevent unnecessary voilations by requiring amountSpecified to be either "> 0" || "< 0" but not "== 0"
+    require x0 != 0; 
 
-    require true;
+    // -amountSpecified represents fixed input swaps, that is why currencyIn must have fixed delta(negative)
+    // +amountSpecified represetns fixed output swaps, that is why currencyOut must have fixed delta (positive)
+    if (x0 < 0) { 
+        if(zeroForOne) { 
+            require x0_swap == x0; //since negative
+            require x1_swap > 0; //currencyOut must have positive delta so that it can be taken
+        } else {
+            require x1_swap == x0;
+            require x0_swap > 0;
+        }
+    } else {
+        if(zeroForOne) { 
+            require x0_swap < 0; //currencyIn  must have negative delta so that it can be settled
+            require x1_swap == x0; //since positive
+        } else {
+            require x1_swap < 0;
+            require x0_swap == x0;
+        }
+    }
 }
 
 /// CHANGE THE HAVOC STATEMENTS HERE THAT WILL DICTATE HOW THE POOL STATE CHANGES
