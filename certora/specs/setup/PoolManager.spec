@@ -166,7 +166,7 @@ function updatePoolStateOnSwap(
     /*
     Alternatively, one can declare a random variable and assign:
         int24 newTick;  poolTick[poolId] = newTick;
-        uint160 newSqrtPrice;  poolTick[poolId] = newSqrtPrice;
+        uint160 newSqrtPrice;  poolSqrtPriceX96[poolId] = newSqrtPrice;
         uint128 newLiquidity;  liquidityPerPool[poolId] = newLiquidity;
     */
 
@@ -178,6 +178,9 @@ function updatePoolStateOnSwap(
 
     havoc liquidityPerPool assuming forall bytes32 poolIdA.
         (poolIdA != poolId => liquidityPerPool@new[poolIdA] == liquidityPerPool@old[poolIdA]);
+
+    // update new sqrt pricelimit
+    poolSqrtPriceX96[poolId] = sqrtP_limit;
 }
 
 function modifyLiquidityMock(
