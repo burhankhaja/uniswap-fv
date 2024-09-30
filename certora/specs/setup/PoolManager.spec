@@ -72,6 +72,10 @@ function swapMock(
     int256 amountSpecified,
     uint160 sqrtPriceLimitX96
 ) returns Conversions.BalanceDelta {
+    
+    /// Ensure currencies are in order (you can't just swap USDC for USDC)
+    require key.currency0 < key.currency1;
+
     /// Calculate hashed pool and position IDs.
     bytes32 poolId = PoolKeyToId(key);
     
