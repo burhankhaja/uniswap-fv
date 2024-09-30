@@ -159,3 +159,57 @@ rule singleHop_outputSwapCantTakeMoreInputCurrencyThanMaxLimit {
 //---------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------
+
+// doc: user should be able to swap his whole credit by "fixed_input_type_swaps" for variable amounts of another pool currency- which means the delta of the swapped credit must cancelout and become zero
+rule CreditSwapCancelsOutTheDeltaOfCreditedCurrency__singleHop {
+   env e;
+   IV4Router.ExactInputSingleParams  params;
+   require params.amountIn == 0; // only opendelta swaps
+   require params.poolKey.hooks != currentContract; 
+
+   // swap the credit
+   swapExactInSingle(e,params);
+   
+
+   // caching post state
+   mathint deltaOfSwappedCredit;
+   if(params.zeroForOne) {
+       deltaOfSwappedCredit = getCurrencyDeltaExt(params.poolKey.currency0, currentContract);
+   } else {
+       deltaOfSwappedCredit = getCurrencyDeltaExt(params.poolKey.currency1, currentContract);
+   }
+
+   assert deltaOfSwappedCredit == 0, "All the credit must be utilized as the swap is of fixed input swap";
+}
+
+//@audit now make a similar rule for multi-hop
+// rule credit.....__multiHop {}
+
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
+
+// doc: (vice-versa) :: user should be able to swap his whole debt by "fixed_output_type_swaps" for variable amount of another pool currency- which means the delta of the swapped debt must cancelout and become zero; one thing to note here is the zeroForOne calculations for debt is inversed
+rule DebtSwapCancelsOutTheDeltaOfDebtCurrency__singleHop {
+    env e;
+    IV4Router.ExactOutputSingleParams  params;
+    require params.amountOut == 0; // open delta cases only
+    require params.poolKey.hooks != currentContract; 
+    
+    swapExactOutSingle(e,params);
+
+   // caching post state
+   mathint deltaOfSwappedDebt;
+   if(params.zeroForOne) {
+       deltaOfSwappedDebt = getCurrencyDeltaExt(params.poolKey.currency1, currentContract);
+   } else {
+       deltaOfSwappedDebt = getCurrencyDeltaExt(params.poolKey.currency0, currentContract);
+   }
+
+   assert deltaOfSwappedDebt == 0, "All the debt must be utilized when swapped in output type swaps";
+
+}
+
+//@audit now create a similar rule for multi_hop debt swap
+// rule DebtSwapCancelsOutTheDeltaOfDebtCurrency__multiHop {}
+
