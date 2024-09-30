@@ -36,12 +36,18 @@ rule  swapExactOutSingle__MustNotAlwaysRevert {
    env e;
    IV4Router.ExactOutputSingleParams  params;
    require params.zeroForOne;
+   require params.poolKey.hooks != currentContract; // differentiate b/w delta's of swapper and poolhooks
+   require params.amountOut > 0;
 
    // swap
    swapExactOutSingle@withrevert(e, params);
-    
+   bool reverted = lastReverted;
+
+   // post-condition 
+   require getCurrencyDeltaExt(params.poolKey.currency0, currentContract) != 0; 
+
    // there has to be a single non-reverting path
-   satisfy !lastReverted, "swapping must not always revert!";
+   satisfy !reverted, "swapping must not always revert!";
 }
 
 //--------------------------------------------------------------------------------
