@@ -66,36 +66,46 @@ rule ValueBetweenMinMaxBoundsPushesSqrtPriceInSingleOutputSwap {
 
 
 // doc: multi-hop swaps must increase or decrease price only by a value closely next to min and max sqrtprice bound
+rule sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_inputSwap {
+    env e;
+    
+    IV4Router.ExactInputParams params;
+    require params.path.length == 1; //optimize computation for the prover
 
-// rule sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_inputSwap {
-//     env e;
+    //need to calculate poolkey, poolId
+    Conversions.PoolKey key; bool zeroForOne;
+    (key , zeroForOne) = getPoolAndSwapDirection(e, params.path[0], params.currencyIn);
+
+    bytes32 poolId = PoolKeyToId(key);
+
+    swapExactIn(e, params);
+
+    uint160 sqrtP = poolSqrtPriceX96[poolId];
+
+    assert zeroForOne => sqrtP == (MIN_SQRT_PRICE() + 1);
+    assert !zeroForOne => sqrtP == (MAX_SQRT_PRICE() - 1);
+
+}
+
+
+
+//@audit checkpoint @audit-issue it is lil bit inverse :::: currencyOUt is passed
+rule sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_outputSwap {
+    env e;
     
     
-//     IV4Router.ExactInputParams params;
-//     bytes32 poolId = PoolKeyToId(params.poolKey);
+    IV4Router.ExactOutputParams
+    require params.path.length == 1; //optimize computation for the prover
 
-//     swapExactIn(e, params);
+    bytes32 poolId = PoolKeyToId(params.poolKey);
 
-//     uint160 sqrtP = sqrtpoolSqrtPriceX96[poolId];
+    swapExactOut(e, params);
 
-//     assert params.zeroForOne => sqrtP == ;
-//     assert !params.zeroForOne => sqrtP == ;
-// }
+    uint160 sqrtP = poolSqrtPriceX96[poolId];
 
-// rule sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_outputSwap {
-//     env e;
-    
-    
-//     IV4Router.ExactOutputParams
-//     bytes32 poolId = PoolKeyToId(params.poolKey);
-
-//     swapExactOut(e, params);
-
-//     uint160 sqrtP = sqrtpoolSqrtPriceX96[poolId];
-
-//     assert params.zeroForOne => sqrtP == ;
-//     assert !params.zeroForOne => sqrtP == ;
-// }
+    assert params.zeroForOne => sqrtP == ;
+    assert !params.zeroForOne => sqrtP == ;
+}
 
 //==================================================
 //==================================================
@@ -128,18 +138,24 @@ rule SUMMARIZED_ValueBetweenMinMaxBoundsPushesSqrtPriceInSingleOutputSwap {
     assert (sqrtP == params.sqrtPriceLimitX96 || sqrtP == (MIN_SQRT_PRICE() + 1) || sqrtP == (MAX_SQRT_PRICE() - 1));
 }
 
+rule SUMMARIZED_sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_inputSwap {
+    env e;
+    
+    IV4Router.ExactInputParams params;
+    require params.path.length == 1; //optimize computation for the prover
 
-// rule SUMMARIZED_sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_inputSwap {
-//     env e;
+    //need to calculate poolkey, poolId
+    Conversions.PoolKey key; bool zeroForOne;
+    (key , zeroForOne) = getPoolAndSwapDirection(e, params.path[0], params.currencyIn);
 
-//     IV4Router.ExactInputParams params;
-//     bytes32 poolId = PoolKeyToId(params.poolKey);
+    bytes32 poolId = PoolKeyToId(key);
 
-//     swapExactIn(e, params);
+    swapExactIn(e, params);
 
-//     uint160 sqrtP = sqrtpoolSqrtPriceX96[poolId];
+    uint160 sqrtP = poolSqrtPriceX96[poolId];
 
-//     assert params.zeroForOne => sqrtP == ;
-//     assert !params.zeroForOne => sqrtP == ;
-// }
+    assert (sqrtP == (MIN_SQRT_PRICE() + 1)) || (sqrtP == (MAX_SQRT_PRICE() - 1));
+
+}
+
 
