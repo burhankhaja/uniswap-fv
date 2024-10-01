@@ -30,7 +30,6 @@ methods {
 
 use builtin rule sanity filtered { f -> f.contract == currentContract }
 
-// zx :=    certoraRun certora/confs/V4RouterSqrtPrice.conf --rule ""
 
 definition MIN_SQRT_PRICE() returns uint160 = 4295128739;
 definition MAX_SQRT_PRICE() returns uint160 = 1461446703485210103287273052203988822378723970342;
@@ -87,25 +86,25 @@ rule sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_inputSwap {
 
 }
 
-
-
-//@audit checkpoint @audit-issue it is lil bit inverse :::: currencyOUt is passed
 rule sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_outputSwap {
     env e;
-    
-    
-    IV4Router.ExactOutputParams
+    IV4Router.ExactOutputParams params;
     require params.path.length == 1; //optimize computation for the prover
 
-    bytes32 poolId = PoolKeyToId(params.poolKey);
+    Conversions.PoolKey key; bool zeroForOne;
+    (key , zeroForOne) = getPoolAndSwapDirection(e, params.path[0], params.currencyOut);
+    bytes32 poolId = PoolKeyToId(key);
 
     swapExactOut(e, params);
 
     uint160 sqrtP = poolSqrtPriceX96[poolId];
 
-    assert params.zeroForOne => sqrtP == ;
-    assert !params.zeroForOne => sqrtP == ;
+    //since inversed
+    assert !zeroForOne => sqrtP == (MIN_SQRT_PRICE() + 1);
+    assert zeroForOne => sqrtP == (MAX_SQRT_PRICE() - 1);
 }
+
+
 
 //==================================================
 //==================================================
@@ -156,6 +155,23 @@ rule SUMMARIZED_sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_inputSwap {
 
     assert (sqrtP == (MIN_SQRT_PRICE() + 1)) || (sqrtP == (MAX_SQRT_PRICE() - 1));
 
+}
+
+rule SUMMARIZED_sqrtPriceLimitIsPushedByValueCloserToMinMaxLimits_outputSwap {
+    env e;
+    IV4Router.ExactOutputParams params;
+    require params.path.length == 1; //optimize computation for the prover
+
+    Conversions.PoolKey key; bool zeroForOne;
+    (key , zeroForOne) = getPoolAndSwapDirection(e, params.path[0], params.currencyOut);
+    bytes32 poolId = PoolKeyToId(key);
+
+    swapExactOut(e, params);
+
+    uint160 sqrtP = poolSqrtPriceX96[poolId];
+
+    //since inversed
+    assert (sqrtP == (MIN_SQRT_PRICE() + 1)) || ((sqrtP == MAX_SQRT_PRICE() - 1));
 }
 
 
